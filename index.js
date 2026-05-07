@@ -29,13 +29,32 @@ app.get('/health', (req, res) => {
 let db = null;
 let dbReady = Promise.resolve();
 
+function getRequiredDbConfig() {
+  const host = process.env.DB_HOST;
+  const user = process.env.DB_USER;
+  const password = process.env.DB_PASSWORD;
+  const database = process.env.DB_NAME;
+  const missing = [];
+  if (!host) missing.push('DB_HOST');
+  if (!user) missing.push('DB_USER');
+  if (!password) missing.push('DB_PASSWORD');
+  if (!database) missing.push('DB_NAME');
+  if (missing.length > 0) {
+    throw new Error(
+      `MySQL mode requires these environment variables (no defaults in code): ${missing.join(', ')}`
+    );
+  }
+  return { host, user, password, database };
+}
+
 function initializeDatabase() {
   const mysql = require('mysql2');
+  const config = getRequiredDbConfig();
   db = mysql.createConnection({
-    host: process.env.DB_HOST || 'database1.colpdmacwjni.us-east-1.rds.amazonaws.com',
-    user: process.env.DB_USER || 'admin',
-    password: process.env.DB_PASSWORD || 'admin123',
-    database: process.env.DB_NAME || 'database3'
+    host: config.host,
+    user: config.user,
+    password: config.password,
+    database: config.database
   });
 
   const createTableQuery = `
